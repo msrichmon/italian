@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Italian Flashcards</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FDF6EE;
+  --card-back: #7C3D1E;
+  --accent1: #E8522A;
+  --accent2: #F5C842;
+  --accent3: #4A9B6F;
+  --accent4: #2A6E8C;
+  --text-dark: #2D1A0E;
+  --shadow: 0 8px 32px rgba(124, 61, 30, 0.15);
+  --radius: 24px;
+  --cream: #FFF9F2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  background-image: 
+    radial-gradient(circle at 20% 10%, rgba(232,82,42,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 90%, rgba(245,200,66,0.07) 0%, transparent 50%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 60px;
+}
+header { text-align: center; margin-bottom: 24px; }
+.flag { font-size: 2.5rem; margin-bottom: 4px; display: block; }
+h1 { 
+  font-family: 'Playfair Display', serif;
+  font-weight: 800; 
+  font-size: clamp(1.8rem, 5vw, 2.6rem); 
+  color: var(--card-back); 
+  line-height: 1.1; 
+}
+h1 span { color: var(--accent1); font-style: italic; }
+.subtitle { font-size: 0.9rem; color: #A07850; margin-top: 5px; font-weight: 600; letter-spacing: 0.05em; }
+
+.tabs { 
+  display: flex; gap: 6px; margin-bottom: 20px; 
+  background: rgba(255,255,255,0.75); 
+  border-radius: 50px; padding: 5px;
+  border: 1.5px solid rgba(124,61,30,0.12);
+  flex-wrap: wrap; justify-content: center;
+}
+.tab { 
+  padding: 8px 16px; border-radius: 40px; border: none; 
+  font-weight: 700; cursor: pointer; background: transparent; 
+  color: #A07850; font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+}
+.tab.active { background: var(--card-back); color: white; }
+
+.top-controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+.pill-btn { 
+  padding: 8px 18px; border-radius: 40px; 
+  border: 2px solid rgba(124,61,30,0.2); 
+  font-weight: 700; font-size: 0.85rem; cursor: pointer; 
+  background: transparent; color: #A07850;
+  font-family: 'DM Sans', sans-serif;
+}
+.pill-btn.active { background: var(--accent2); border-color: var(--accent2); color: var(--text-dark); }
+
+.progress-bar { width: 100%; max-width: 480px; height: 7px; background: rgba(124,61,30,0.12); border-radius: 10px; margin-bottom: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent1), var(--accent2)); border-radius: 10px; transition: width 0.4s ease; }
+.progress-text { font-size: 0.82rem; color: #A07850; font-weight: 700; margin-bottom: 20px; letter-spacing: 0.04em; }
+
+.review-banner { 
+  width: 100%; max-width: 420px; 
+  background: linear-gradient(135deg, var(--accent1), #C0391B); 
+  color: white; border-radius: 16px; padding: 12px 20px; 
+  margin-bottom: 16px; text-align: center; font-weight: 700; 
+  font-size: 0.95rem; display: none; gap: 8px; 
+}
+.review-banner.show { display: flex; align-items: center; justify-content: center; }
+.review-banner button { 
+  background: rgba(255,255,255,0.25); border: none; color: white; 
+  padding: 4px 12px; border-radius: 20px; font-weight: 700; 
+  font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+
+.card-area { 
+  width: 100%; max-width: 420px; min-height: 220px; 
+  margin-bottom: 24px; background: var(--cream); 
+  border-radius: var(--radius); padding: 28px; 
+  box-shadow: var(--shadow); 
+  border: 2px solid rgba(124,61,30,0.12);
+  display: flex; flex-direction: column; 
+  align-items: center; justify-content: center; position: relative; 
+}
+.card-label { 
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; 
+  text-transform: uppercase; color: #C5A882; margin-bottom: 14px; 
+}
+.card-word { 
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: clamp(1.8rem, 6vw, 2.8rem); 
+  color: var(--card-back); text-align: center; line-height: 1.2; 
+}
+.card-hint { font-size: 0.78rem; color: #C5A882; margin-top: 16px; font-weight: 600; }
+.card-example { 
+  font-size: 0.85rem; color: #A07850; margin-top: 12px; 
+  font-style: italic; text-align: center; line-height: 1.4; max-width: 100%; 
+}
+
+.result-overlay { 
+  position: absolute; inset: 0; border-radius: calc(var(--radius) - 2px); 
+  display: flex; flex-direction: column; align-items: center; 
+  justify-content: center; padding: 20px; opacity: 0; 
+  pointer-events: none; transition: opacity 0.3s ease; 
+}
+.result-overlay.show { opacity: 1; pointer-events: auto; }
+.result-overlay.correct-overlay { background: rgba(74,155,111,0.95); }
+.result-overlay.wrong-overlay { background: rgba(232,82,42,0.95); }
+.result-icon { font-size: 2.2rem; margin-bottom: 6px; }
+.result-msg { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.4rem; color: white; text-align: center; }
+.result-answer { font-size: 0.9rem; color: rgba(255,255,255,0.9); margin-top: 6px; font-weight: 700; text-align: center; }
+.result-example { font-size: 0.8rem; color: rgba(255,255,255,0.85); margin-top: 8px; font-style: italic; text-align: center; line-height: 1.3; }
+
+.type-area { width: 100%; max-width: 420px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
+.input-row { display: flex; gap: 10px; }
+.answer-input { 
+  flex: 1; padding: 14px 20px; border-radius: 50px; 
+  border: 2px solid rgba(124,61,30,0.2); background: white; 
+  font-size: 1.05rem; font-weight: 600; color: var(--text-dark); 
+  outline: none; font-family: 'DM Sans', sans-serif;
+}
+.answer-input:focus { border-color: var(--card-back); }
+.answer-input.correct-input { border-color: var(--accent3); background: rgba(74,155,111,0.07); }
+.answer-input.wrong-input { border-color: var(--accent1); background: rgba(232,82,42,0.07); }
+.answer-input:disabled { opacity: 0.7; }
+
+.btn-check { 
+  padding: 14px 22px; border-radius: 50px; border: none; 
+  background: var(--card-back); color: white; font-weight: 700; 
+  font-size: 1rem; cursor: pointer; white-space: nowrap; 
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent; 
+}
+.btn-check:disabled { opacity: 0.4; }
+
+.accent-bar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 16px; }
+.accent-btn { 
+  padding: 5px 12px; border-radius: 20px; 
+  border: 1.5px solid rgba(124,61,30,0.2); background: white; 
+  font-size: 1rem; font-weight: 700; color: var(--card-back); 
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent; 
+}
+
+.feedback-strip { 
+  width: 100%; max-width: 420px; border-radius: 16px; 
+  padding: 12px 20px; margin-bottom: 14px; text-align: center; 
+  font-weight: 700; font-size: 1rem; opacity: 0; transition: opacity 0.3s; 
+}
+.feedback-strip.show { opacity: 1; }
+.feedback-strip.correct-strip { background: rgba(74,155,111,0.15); color: #2A6B48; }
+.feedback-strip.wrong-strip { background: rgba(232,82,42,0.15); color: #B83518; }
+
+.btn-next { 
+  padding: 13px 32px; background: var(--accent3); color: white; 
+  border: none; border-radius: 50px; font-weight: 700; font-size: 1rem; 
+  cursor: pointer; margin-bottom: 20px; display: none; 
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent; 
+}
+.btn-next.show { display: block; }
+
+.btn-skip { 
+  padding: 11px 24px; background: rgba(124,61,30,0.08); 
+  color: var(--card-back); border: 2px solid rgba(124,61,30,0.18); 
+  border-radius: 50px; font-weight: 700; font-size: 0.9rem; 
+  cursor: pointer; margin-bottom: 20px; 
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent; transition: all 0.2s; 
+}
+.btn-skip:hover { background: rgba(124,61,30,0.14); }
+
+.stats { 
+  display: flex; gap: 20px; background: var(--cream); 
+  border-radius: 20px; padding: 14px 28px; margin-bottom: 20px;
+  border: 1.5px solid rgba(124,61,30,0.1);
+}
+.stat { text-align: center; }
+.stat-num { font-size: 1.5rem; font-weight: 800; line-height: 1; font-family: 'Playfair Display', serif; }
+.stat-num.green { color: var(--accent3); }
+.stat-num.red { color: var(--accent1); }
+.stat-num.blue { color: var(--accent4); }
+.stat-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #C5A882; margin-top: 2px; }
+.stat-divider { width: 1px; background: rgba(0,0,0,0.08); }
+
+.bottom-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.btn-shuffle { 
+  padding: 10px 22px; background: rgba(124,61,30,0.08); 
+  color: var(--card-back); border-radius: 50px; border: none; 
+  font-weight: 700; font-size: 0.88rem; cursor: pointer; 
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent; 
+}
+.btn-review { 
+  padding: 10px 22px; background: var(--accent1); color: white; 
+  border-radius: 50px; border: none; font-weight: 700; font-size: 0.88rem; 
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent; 
+}
+.btn-review:disabled { opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="flag">🇮🇹</span>
+  <h1>Impara l'<span>Italiano</span>!</h1>
+  <div class="subtitle">Italian Flashcards • Bidirectional</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" id="tab-all">🃏 All Words</button>
+  <button class="tab" id="tab-viso">😊 Il Viso</button>
+  <button class="tab" id="tab-corpo">🧍 Il Corpo</button>
+  <button class="tab" id="tab-prepositions">📍 Preposizioni</button>
+  <button class="tab" id="tab-conjugations">🔄 Coniugazioni</button>
+</div>
+
+<div class="top-controls">
+  <button class="pill-btn active" id="mode-it">🇮🇹 → 🇬🇧</button>
+  <button class="pill-btn" id="mode-en">🇬🇧 → 🇮🇹</button>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+<div class="progress-text" id="progressText">Card 1 of 169</div>
+
+<div class="review-banner" id="reviewBanner">
+  🔁 Reviewing missed words only
+  <button id="exitReviewBtn">Exit Review</button>
+</div>
+
+<div class="card-area">
+  <div class="card-label" id="frontLabel">ITALIAN</div>
+  <div class="card-word" id="frontWord">i capelli</div>
+  <div class="card-example" id="cardExample"></div>
+  <div class="card-hint">✏️ Type your answer below</div>
+  <div class="result-overlay" id="resultOverlay">
+    <div class="result-icon" id="resultIcon">✓</div>
+    <div class="result-msg" id="resultMsg">Corretto!</div>
+    <div class="result-answer" id="resultAnswer"></div>
+    <div class="result-example" id="resultExample"></div>
+  </div>
+</div>
+
+<div class="type-area">
+  <div class="input-row">
+    <input type="text" class="answer-input" id="answerInput" placeholder="Scrivi la risposta…" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <button class="btn-check" id="checkBtn">Check ↵</button>
+  </div>
+  <div class="accent-bar" id="accentBar"></div>
+</div>
+
+<div class="feedback-strip" id="feedbackStrip"></div>
+<button class="btn-next" id="nextBtn">Next card →</button>
+<button class="btn-skip" id="skipBtn">Skip →</button>
+
+<div class="stats">
+  <div class="stat"><div class="stat-num green" id="statCorrect">0</div><div class="stat-label">Correct</div></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><div class="stat-num red" id="statIncorrect">0</div><div class="stat-label">Learning</div></div>
+  <div class="stat-divider"></div>
+  <div class="stat"><div class="stat-num blue" id="statRemaining">169</div><div class="stat-label">Remaining</div></div>
+</div>
+
+<div class="bottom-actions">
+  <button class="btn-shuffle" id="shuffleBtn">🔀 Shuffle Cards</button>
+  <button class="btn-review" id="reviewBtn" disabled>📖 Review Missed</button>
+  <button class="btn-review" id="reviewSkippedBtn" disabled>⏭️ Review Skipped</button>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const allCards = [
+    // ── Il Viso (The Face) ────────────────────────────────
+    { it: "i capelli", en: "the hair", emoji: "💇", category: "viso" },
+    { it: "la fronte", en: "the forehead", emoji: "😊", category: "viso" },
+    { it: "le sopracciglia", en: "the eyebrows", emoji: "🤨", category: "viso" },
+    { it: "gli occhi", en: "the eyes", emoji: "👁️", category: "viso" },
+    { it: "le ciglia", en: "the eyelashes", emoji: "😉", category: "viso" },
+    { it: "le orecchie", en: "the ears", emoji: "👂", category: "viso" },
+    { it: "il naso", en: "the nose", emoji: "👃", category: "viso" },
+    { it: "le narici", en: "the nostrils", emoji: "👃", category: "viso" },
+    { it: "le guance", en: "the cheeks", emoji: "😊", category: "viso" },
+    { it: "la bocca", en: "the mouth", emoji: "👄", category: "viso" },
+    { it: "le labbra", en: "the lips", emoji: "💋", category: "viso" },
+    { it: "i denti", en: "the teeth", emoji: "🦷", category: "viso" },
+    { it: "il mento", en: "the chin", emoji: "🧏", category: "viso" },
+    // ── Il Corpo (The Body) ───────────────────────────────
+    { it: "la testa", en: "the head", emoji: "🧠", category: "corpo" },
+    { it: "il collo", en: "the neck", emoji: "🧣", category: "corpo" },
+    { it: "la schiena", en: "the back", emoji: "🔙", category: "corpo" },
+    { it: "le spalle", en: "the shoulders", emoji: "💪", category: "corpo" },
+    { it: "il braccio", en: "the arm", emoji: "💪", category: "corpo" },
+    { it: "il gomito", en: "the elbow", emoji: "🦾", category: "corpo" },
+    { it: "il petto", en: "the chest", emoji: "🫀", category: "corpo" },
+    { it: "l'ombelico", en: "the belly button", emoji: "🎯", category: "corpo" },
+    { it: "il polso", en: "the wrist", emoji: "⌚", category: "corpo" },
+    { it: "la mano", en: "the hand", emoji: "✋", category: "corpo" },
+    { it: "le dita", en: "the fingers", emoji: "🖐️", category: "corpo" },
+    { it: "la pancia", en: "the belly", emoji: "🫃", category: "corpo" },
+    { it: "i glutei", en: "the buttocks", emoji: "🍑", category: "corpo" },
+    { it: "la gamba", en: "the leg", emoji: "🦵", category: "corpo" },
+    { it: "la coscia", en: "the thigh", emoji: "🦵", category: "corpo" },
+    { it: "il ginocchio", en: "the knee", emoji: "🦵", category: "corpo" },
+    { it: "il polpaccio", en: "the calf", emoji: "🦵", category: "corpo" },
+    { it: "la caviglia", en: "the ankle", emoji: "🦶", category: "corpo" },
+    { it: "il piede", en: "the foot", emoji: "🦶", category: "corpo" },
+    { it: "il tallone", en: "the heel", emoji: "👠", category: "corpo" },
+    { it: "le dita dei piedi", en: "the toes", emoji: "🦶", category: "corpo" },
+    { it: "il pollice", en: "the thumb", emoji: "👍", category: "corpo" },
+    { it: "l'indice", en: "the index finger", emoji: "☝️", category: "corpo" },
+    { it: "il medio", en: "the middle finger", emoji: "🖕", category: "corpo" },
+    { it: "l'anulare", en: "the ring finger", emoji: "💍", category: "corpo" },
+    { it: "il mignolo", en: "the little finger", emoji: "🤙", category: "corpo" },
+    // ── Preposizioni ─────────────────────────────────────
+    { it: "a", en: "to, at", emoji: "➡️", category: "prepositions", example: "Vado a Roma • Sono a casa", exampleEn: "I'm going to Rome • I'm at home" },
+    { it: "di", en: "of, from", emoji: "⬅️", category: "prepositions", example: "Il libro di Maria • Vengo di Roma", exampleEn: "Maria's book • I come from Rome" },
+    { it: "in", en: "in", emoji: "📦", category: "prepositions", example: "Il gatto è in scatola", exampleEn: "The cat is in the box" },
+    { it: "su", en: "on", emoji: "🔝", category: "prepositions", example: "Il libro è sul tavolo", exampleEn: "The book is on the table" },
+    { it: "sotto", en: "under", emoji: "⬇️", category: "prepositions", example: "Il cane è sotto il tavolo", exampleEn: "The dog is under the table" },
+    { it: "con", en: "with", emoji: "🤝", category: "prepositions", example: "Vado con il mio amico", exampleEn: "I'm going with my friend" },
+    { it: "senza", en: "without", emoji: "🚫", category: "prepositions", example: "Un caffè senza zucchero", exampleEn: "A coffee without sugar" },
+    { it: "per", en: "for", emoji: "🎁", category: "prepositions", example: "È per te", exampleEn: "It's for you" },
+    { it: "da", en: "by, from, since", emoji: "🚪", category: "prepositions", example: "Scritto da Paolo • Vengo da Londra", exampleEn: "Written by Paolo • I come from London" },
+    { it: "tra", en: "between, among", emoji: "↔️", category: "prepositions", example: "Tra te e me", exampleEn: "Between you and me" },
+    { it: "dietro", en: "behind", emoji: "👈", category: "prepositions", example: "Dietro la casa", exampleEn: "Behind the house" },
+    { it: "davanti a", en: "in front of", emoji: "👉", category: "prepositions", example: "Davanti alla scuola", exampleEn: "In front of the school" },
+    { it: "verso", en: "towards", emoji: "🎯", category: "prepositions", example: "Cammino verso la stazione", exampleEn: "I'm walking towards the station" },
+    { it: "durante", en: "during", emoji: "⏰", category: "prepositions", example: "Durante le vacanze", exampleEn: "During the holidays" },
+    { it: "prima di", en: "before", emoji: "⏮️", category: "prepositions", example: "Prima di cena", exampleEn: "Before dinner" },
+    { it: "dopo", en: "after", emoji: "⏭️", category: "prepositions", example: "Dopo il film", exampleEn: "After the movie" },
+    { it: "contro", en: "against", emoji: "🛡️", category: "prepositions", example: "Contro il muro", exampleEn: "Against the wall" },
+    { it: "fra", en: "between, in", emoji: "👥", category: "prepositions", example: "Fra i miei amici • Fra un'ora", exampleEn: "Among my friends • In an hour" },
+    { it: "secondo", en: "according to", emoji: "📰", category: "prepositions", example: "Secondo Paolo", exampleEn: "According to Paolo" },
+    { it: "nonostante", en: "despite", emoji: "💪", category: "prepositions", example: "Nonostante la pioggia", exampleEn: "Despite the rain" },
+    { it: "tranne", en: "except", emoji: "➖", category: "prepositions", example: "Tutti tranne Maria", exampleEn: "Everyone except Maria" },
+    { it: "grazie a", en: "thanks to", emoji: "🙏", category: "prepositions", example: "Grazie a te", exampleEn: "Thanks to you" },
+    { it: "a causa di", en: "because of", emoji: "❓", category: "prepositions", example: "A causa della pioggia", exampleEn: "Because of the rain" },
+    { it: "invece di", en: "instead of", emoji: "🔀", category: "prepositions", example: "Invece di partire", exampleEn: "Instead of leaving" },
+    { it: "vicino a", en: "near", emoji: "📍", category: "prepositions", example: "Vicino alla stazione", exampleEn: "Near the station" },
+    { it: "lontano da", en: "far from", emoji: "🏃", category: "prepositions", example: "Lontano da Roma", exampleEn: "Far from Rome" },
+    { it: "intorno a", en: "around", emoji: "🔄", category: "prepositions", example: "Intorno al tavolo", exampleEn: "Around the table" },
+    { it: "accanto a", en: "next to, beside", emoji: "👫", category: "prepositions", example: "Accanto a Maria", exampleEn: "Next to Maria" },
+    { it: "di fronte a", en: "across from, opposite", emoji: "↔️", category: "prepositions", example: "Di fronte alla scuola", exampleEn: "Across from the school" },
+    { it: "sopra", en: "above, on top of", emoji: "⬆️", category: "prepositions", example: "Sopra il tavolo", exampleEn: "Above the table" },
+    { it: "al di sotto di", en: "below", emoji: "⬇️", category: "prepositions", example: "Al di sotto di zero", exampleEn: "Below zero" },
+    { it: "lungo", en: "along", emoji: "↕️", category: "prepositions", example: "Lungo il fiume", exampleEn: "Along the river" },
+    { it: "attraverso", en: "through, across", emoji: "🚶", category: "prepositions", example: "Attraverso il parco", exampleEn: "Through the park" },
+    { it: "fino a", en: "until, up to", emoji: "⏱️", category: "prepositions", example: "Fino a domani • Fino a Roma", exampleEn: "Until tomorrow • Up to Rome" },
+    // ── Coniugazioni – ESSERE (to be) ────────────────────
+    { it: "io sono", en: "I am", emoji: "👤", category: "conjugations", verb: "essere", tense: "presente" },
+    { it: "tu sei", en: "you are (informal)", emoji: "👤", category: "conjugations", verb: "essere", tense: "presente" },
+    { it: "lui/lei è", en: "he/she is", emoji: "👤", category: "conjugations", verb: "essere", tense: "presente" },
+    { it: "noi siamo", en: "we are", emoji: "👥", category: "conjugations", verb: "essere", tense: "presente" },
+    { it: "voi siete", en: "you are (plural)", emoji: "👥", category: "conjugations", verb: "essere", tense: "presente" },
+    { it: "loro sono", en: "they are", emoji: "👥", category: "conjugations", verb: "essere", tense: "presente" },
+    { it: "io ero", en: "I was", emoji: "👤", category: "conjugations", verb: "essere", tense: "imperfetto" },
+    { it: "tu eri", en: "you were (informal)", emoji: "👤", category: "conjugations", verb: "essere", tense: "imperfetto" },
+    { it: "lui/lei era", en: "he/she was", emoji: "👤", category: "conjugations", verb: "essere", tense: "imperfetto" },
+    { it: "noi eravamo", en: "we were", emoji: "👥", category: "conjugations", verb: "essere", tense: "imperfetto" },
+    { it: "voi eravate", en: "you were (plural)", emoji: "👥", category: "conjugations", verb: "essere", tense: "imperfetto" },
+    { it: "loro erano", en: "they were", emoji: "👥", category: "conjugations", verb: "essere", tense: "imperfetto" },
+    { it: "io sarò", en: "I will be", emoji: "👤", category: "conjugations", verb: "essere", tense: "futuro" },
+    { it: "tu sarai", en: "you will be (informal)", emoji: "👤", category: "conjugations", verb: "essere", tense: "futuro" },
+    { it: "lui/lei sarà", en: "he/she will be", emoji: "👤", category: "conjugations", verb: "essere", tense: "futuro" },
+    { it: "noi saremo", en: "we will be", emoji: "👥", category: "conjugations", verb: "essere", tense: "futuro" },
+    { it: "voi sarete", en: "you will be (plural)", emoji: "👥", category: "conjugations", verb: "essere", tense: "futuro" },
+    { it: "loro saranno", en: "they will be", emoji: "👥", category: "conjugations", verb: "essere", tense: "futuro" },
+    { it: "io sono stato/a", en: "I was, I have been", emoji: "👤", category: "conjugations", verb: "essere", tense: "passato prossimo" },
+    { it: "tu sei stato/a", en: "you were, you have been (informal)", emoji: "👤", category: "conjugations", verb: "essere", tense: "passato prossimo" },
+    { it: "lui/lei è stato/a", en: "he/she was, he/she has been", emoji: "👤", category: "conjugations", verb: "essere", tense: "passato prossimo" },
+    { it: "noi siamo stati/e", en: "we were, we have been", emoji: "👥", category: "conjugations", verb: "essere", tense: "passato prossimo" },
+    { it: "voi siete stati/e", en: "you were, you have been (plural)", emoji: "👥", category: "conjugations", verb: "essere", tense: "passato prossimo" },
+    { it: "loro sono stati/e", en: "they were, they have been", emoji: "👥", category: "conjugations", verb: "essere", tense: "passato prossimo" },
+    // ── Coniugazioni – AVERE (to have) ───────────────────
+    { it: "io ho", en: "I have", emoji: "👤", category: "conjugations", verb: "avere", tense: "presente" },
+    { it: "tu hai", en: "you have (informal)", emoji: "👤", category: "conjugations", verb: "avere", tense: "presente" },
+    { it: "lui/lei ha", en: "he/she has", emoji: "👤", category: "conjugations", verb: "avere", tense: "presente" },
+    { it: "noi abbiamo", en: "we have", emoji: "👥", category: "conjugations", verb: "avere", tense: "presente" },
+    { it: "voi avete", en: "you have (plural)", emoji: "👥", category: "conjugations", verb: "avere", tense: "presente" },
+    { it: "loro hanno", en: "they have", emoji: "👥", category: "conjugations", verb: "avere", tense: "presente" },
+    { it: "io avevo", en: "I had", emoji: "👤", category: "conjugations", verb: "avere", tense: "imperfetto" },
+    { it: "tu avevi", en: "you had (informal)", emoji: "👤", category: "conjugations", verb: "avere", tense: "imperfetto" },
+    { it: "lui/lei aveva", en: "he/she had", emoji: "👤", category: "conjugations", verb: "avere", tense: "imperfetto" },
+    { it: "noi avevamo", en: "we had", emoji: "👥", category: "conjugations", verb: "avere", tense: "imperfetto" },
+    { it: "voi avevate", en: "you had (plural)", emoji: "👥", category: "conjugations", verb: "avere", tense: "imperfetto" },
+    { it: "loro avevano", en: "they had", emoji: "👥", category: "conjugations", verb: "avere", tense: "imperfetto" },
+    { it: "io avrò", en: "I will have", emoji: "👤", category: "conjugations", verb: "avere", tense: "futuro" },
+    { it: "tu avrai", en: "you will have (informal)", emoji: "👤", category: "conjugations", verb: "avere", tense: "futuro" },
+    { it: "lui/lei avrà", en: "he/she will have", emoji: "👤", category: "conjugations", verb: "avere", tense: "futuro" },
+    { it: "noi avremo", en: "we will have", emoji: "👥", category: "conjugations", verb: "avere", tense: "futuro" },
+    { it: "voi avrete", en: "you will have (plural)", emoji: "👥", category: "conjugations", verb: "avere", tense: "futuro" },
+    { it: "loro avranno", en: "they will have", emoji: "👥", category: "conjugations", verb: "avere", tense: "futuro" },
+    { it: "io ho avuto", en: "I had, I have had", emoji: "👤", category: "conjugations", verb: "avere", tense: "passato prossimo" },
+    { it: "tu hai avuto", en: "you had, you have had (informal)", emoji: "👤", category: "conjugations", verb: "avere", tense: "passato prossimo" },
+    { it: "lui/lei ha avuto", en: "he/she had, he/she has had", emoji: "👤", category: "conjugations", verb: "avere", tense: "passato prossimo" },
+    { it: "noi abbiamo avuto", en: "we had, we have had", emoji: "👥", category: "conjugations", verb: "avere", tense: "passato prossimo" },
+    { it: "voi avete avuto", en: "you had, you have had (plural)", emoji: "👥", category: "conjugations", verb: "avere", tense: "passato prossimo" },
+    { it: "loro hanno avuto", en: "they had, they have had", emoji: "👥", category: "conjugations", verb: "avere", tense: "passato prossimo" },
+    // ── Coniugazioni – ANDARE (to go) ────────────────────
+    { it: "io vado", en: "I go, I am going", emoji: "👤", category: "conjugations", verb: "andare", tense: "presente" },
+    { it: "tu vai", en: "you go, you are going (informal)", emoji: "👤", category: "conjugations", verb: "andare", tense: "presente" },
+    { it: "lui/lei va", en: "he/she goes, he/she is going", emoji: "👤", category: "conjugations", verb: "andare", tense: "presente" },
+    { it: "noi andiamo", en: "we go, we are going", emoji: "👥", category: "conjugations", verb: "andare", tense: "presente" },
+    { it: "voi andate", en: "you go, you are going (plural)", emoji: "👥", category: "conjugations", verb: "andare", tense: "presente" },
+    { it: "loro vanno", en: "they go, they are going", emoji: "👥", category: "conjugations", verb: "andare", tense: "presente" },
+    { it: "io andavo", en: "I was going", emoji: "👤", category: "conjugations", verb: "andare", tense: "imperfetto" },
+    { it: "tu andavi", en: "you were going (informal)", emoji: "👤", category: "conjugations", verb: "andare", tense: "imperfetto" },
+    { it: "lui/lei andava", en: "he/she was going", emoji: "👤", category: "conjugations", verb: "andare", tense: "imperfetto" },
+    { it: "noi andavamo", en: "we were going", emoji: "👥", category: "conjugations", verb: "andare", tense: "imperfetto" },
+    { it: "voi andavate", en: "you were going (plural)", emoji: "👥", category: "conjugations", verb: "andare", tense: "imperfetto" },
+    { it: "loro andavano", en: "they were going", emoji: "👥", category: "conjugations", verb: "andare", tense: "imperfetto" },
+    { it: "io andrò", en: "I will go", emoji: "👤", category: "conjugations", verb: "andare", tense: "futuro" },
+    { it: "tu andrai", en: "you will go (informal)", emoji: "👤", category: "conjugations", verb: "andare", tense: "futuro" },
+    { it: "lui/lei andrà", en: "he/she will go", emoji: "👤", category: "conjugations", verb: "andare", tense: "futuro" },
+    { it: "noi andremo", en: "we will go", emoji: "👥", category: "conjugations", verb: "andare", tense: "futuro" },
+    { it: "voi andrete", en: "you will go (plural)", emoji: "👥", category: "conjugations", verb: "andare", tense: "futuro" },
+    { it: "loro andranno", en: "they will go", emoji: "👥", category: "conjugations", verb: "andare", tense: "futuro" },
+    { it: "io sono andato/a", en: "I went, I have gone", emoji: "👤", category: "conjugations", verb: "andare", tense: "passato prossimo" },
+    { it: "tu sei andato/a", en: "you went, you have gone (informal)", emoji: "👤", category: "conjugations", verb: "andare", tense: "passato prossimo" },
+    { it: "lui/lei è andato/a", en: "he/she went, he/she has gone", emoji: "👤", category: "conjugations", verb: "andare", tense: "passato prossimo" },
+    { it: "noi siamo andati/e", en: "we went, we have gone", emoji: "👥", category: "conjugations", verb: "andare", tense: "passato prossimo" },
+    { it: "voi siete andati/e", en: "you went, you have gone (plural)", emoji: "👥", category: "conjugations", verb: "andare", tense: "passato prossimo" },
+    { it: "loro sono andati/e", en: "they went, they have gone", emoji: "👥", category: "conjugations", verb: "andare", tense: "passato prossimo" },
+  ];
+
+  // Italian accents
+  const IT_ACCENTS = ['à','è','é','ì','î','ò','ù','ü'];
+
+  let cards = allCards.slice();
+  let current = 0;
+  let mode = 'it';
+  let scores = {};
+  let answered = false;
+  let reviewMode = false;
+  let originalCards = [];
+  let skippedCards = {};
+
+  function normalise(s) {
+    return s.trim().toLowerCase().replace(/['']/g, "'").replace(/\s+/g, ' ');
+  }
+
+  function stripAccents(s) {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function isCorrect(userInput, target) {
+    const u = normalise(userInput);
+    let t = normalise(target);
+    // Strip parenthetical notes
+    t = t.replace(/\s*\([^)]*\)/g, '');
+    if (u === t) return true;
+    // Multi-value answers separated by comma
+    if (t.includes(',')) {
+      const options = t.split(',').map(function(o) { return o.trim(); });
+      for (var i = 0; i < options.length; i++) {
+        if (u === options[i]) return true;
+      }
+    }
+    if (u.includes(',')) {
+      const uOpts = u.split(',').map(function(o) { return o.trim(); });
+      const tOpts = t.split(',').map(function(o) { return o.trim(); });
+      var allValid = true;
+      for (var i = 0; i < uOpts.length; i++) {
+        var found = false;
+        for (var j = 0; j < tOpts.length; j++) {
+          if (uOpts[i] === tOpts[j]) { found = true; break; }
+        }
+        if (!found) { allValid = false; break; }
+      }
+      if (allValid && uOpts.length > 0) return true;
+    }
+    if (mode === 'it') {
+      // Accept without "the"
+      const tNoThe = t.replace(/^the\s+/, '');
+      if (u === tNoThe) return true;
+    }
+    if (mode === 'en') {
+      // Accept with or without accents
+      if (stripAccents(u) === stripAccents(t)) return true;
+      // Accept without Italian articles
+      const tNoArt = t.replace(/^(il|lo|la|l'|i|gli|le)\s*/i, '');
+      if (u === normalise(tNoArt) || stripAccents(u) === stripAccents(tNoArt)) return true;
+    }
+    return false;
+  }
+
+  function renderCard() {
+    const card = cards[current];
+    if (!card) return;
+    answered = false;
+
+    if (mode === 'it') {
+      document.getElementById('frontLabel').textContent = 'ITALIAN';
+      document.getElementById('frontWord').textContent = card.it;
+    } else {
+      document.getElementById('frontLabel').textContent = 'ENGLISH';
+      document.getElementById('frontWord').textContent = card.en;
+    }
+
+    const exampleEl = document.getElementById('cardExample');
+    if (card.example && card.exampleEn) {
+      exampleEl.textContent = mode === 'it' ? card.example : card.exampleEn;
+      exampleEl.style.display = 'block';
+    } else {
+      exampleEl.textContent = '';
+      exampleEl.style.display = 'none';
+    }
+
+    const input = document.getElementById('answerInput');
+    input.value = '';
+    input.disabled = false;
+    input.className = 'answer-input';
+    document.getElementById('checkBtn').disabled = false;
+    document.getElementById('resultOverlay').className = 'result-overlay';
+    document.getElementById('feedbackStrip').className = 'feedback-strip';
+    document.getElementById('nextBtn').classList.remove('show');
+
+    renderAccentBar();
+
+    const pct = ((current + 1) / cards.length) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = 'Card ' + (current + 1) + ' of ' + cards.length;
+
+    setTimeout(function() { document.getElementById('answerInput').focus(); }, 100);
+  }
+
+  function renderAccentBar() {
+    const bar = document.getElementById('accentBar');
+    if (mode !== 'en') { bar.innerHTML = ''; return; }
+    bar.innerHTML = IT_ACCENTS.map(function(a) {
+      return '<button class="accent-btn" data-char="' + a + '">' + a + '</button>';
+    }).join('');
+    var btns = bar.querySelectorAll('.accent-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].onclick = function() { insertAccent(this.getAttribute('data-char')); };
+    }
+  }
+
+  function insertAccent(char) {
+    const input = document.getElementById('answerInput');
+    if (input.disabled) return;
+    const s = input.selectionStart, e = input.selectionEnd;
+    input.value = input.value.slice(0, s) + char + input.value.slice(e);
+    input.selectionStart = input.selectionEnd = s + 1;
+    input.focus();
+  }
+
+  function checkAnswer() {
+    if (answered) { nextCard(); return; }
+    const card = cards[current];
+    const input = document.getElementById('answerInput');
+    const userValue = input.value;
+    if (!userValue.trim()) return;
+
+    const target = mode === 'it' ? card.en : card.it;
+    const correct = isCorrect(userValue, target);
+
+    answered = true;
+    input.disabled = true;
+    document.getElementById('checkBtn').disabled = true;
+    delete skippedCards[current];
+
+    const overlay = document.getElementById('resultOverlay');
+    const fb = document.getElementById('feedbackStrip');
+    const resultExampleEl = document.getElementById('resultExample');
+
+    if (correct) {
+      input.classList.add('correct-input');
+      overlay.className = 'result-overlay correct-overlay show';
+      document.getElementById('resultIcon').textContent = '✓';
+      document.getElementById('resultMsg').textContent = 'Corretto! 🎉';
+      document.getElementById('resultAnswer').textContent = target;
+      fb.textContent = '✓  "' + target + '"';
+      fb.className = 'feedback-strip correct-strip show';
+      scores[current] = true;
+    } else {
+      input.classList.add('wrong-input');
+      overlay.className = 'result-overlay wrong-overlay show';
+      document.getElementById('resultIcon').textContent = '✗';
+      document.getElementById('resultMsg').textContent = 'Non proprio…';
+      document.getElementById('resultAnswer').textContent = 'Answer: ' + target;
+      fb.textContent = '✗  The answer was: "' + target + '"';
+      fb.className = 'feedback-strip wrong-strip show';
+      scores[current] = false;
+    }
+
+    if (card.exampleEn && card.example) {
+      resultExampleEl.textContent = mode === 'it' ? card.exampleEn : card.example;
+      resultExampleEl.style.display = 'block';
+    } else {
+      resultExampleEl.textContent = '';
+      resultExampleEl.style.display = 'none';
+    }
+
+    updateStats();
+    document.getElementById('nextBtn').classList.add('show');
+  }
+
+  function nextCard() {
+    if (current < cards.length - 1) {
+      current++;
+      renderCard();
+    } else {
+      const correct = Object.keys(scores).filter(function(k) { return scores[k] === true; }).length;
+      const fb = document.getElementById('feedbackStrip');
+      fb.textContent = '🎉 Completato! ' + correct + '/' + cards.length + ' correct. Shuffle to go again!';
+      fb.className = 'feedback-strip correct-strip show';
+      document.getElementById('nextBtn').classList.remove('show');
+    }
+  }
+
+  function skipCard() {
+    skippedCards[current] = true;
+    if (current < cards.length - 1) { current++; renderCard(); }
+    updateStats();
+  }
+
+  function updateStats() {
+    var correct = Object.keys(scores).filter(function(k) { return scores[k] === true; }).length;
+    var incorrect = Object.keys(scores).filter(function(k) { return scores[k] === false; }).length;
+    var skipped = Object.keys(skippedCards).length;
+    var remaining = Math.max(0, cards.length - Object.keys(scores).length - skipped);
+    document.getElementById('statCorrect').textContent = correct;
+    document.getElementById('statIncorrect').textContent = incorrect;
+    document.getElementById('statRemaining').textContent = remaining;
+    document.getElementById('reviewBtn').disabled = incorrect === 0;
+    document.getElementById('reviewSkippedBtn').disabled = skipped === 0;
+  }
+
+  function setCategory(cat) {
+    ['all','viso','corpo','prepositions','conjugations'].forEach(function(c) {
+      document.getElementById('tab-' + c).classList.toggle('active', c === cat);
+    });
+    cards = cat === 'all' ? allCards.slice() : allCards.filter(function(c) { return c.category === cat; });
+    scores = {}; skippedCards = {}; current = 0; reviewMode = false;
+    document.getElementById('reviewBanner').classList.remove('show');
+    renderCard(); updateStats();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('mode-it').classList.toggle('active', m === 'it');
+    document.getElementById('mode-en').classList.toggle('active', m === 'en');
+    scores = {}; skippedCards = {}; current = 0; reviewMode = false;
+    document.getElementById('reviewBanner').classList.remove('show');
+    renderCard(); updateStats();
+  }
+
+  function shuffleCards() {
+    if (reviewMode) {
+      cards = originalCards.slice(); reviewMode = false; originalCards = [];
+      document.getElementById('reviewBanner').classList.remove('show');
+    }
+    for (var i = cards.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = cards[i]; cards[i] = cards[j]; cards[j] = t;
+    }
+    scores = {}; skippedCards = {}; current = 0;
+    renderCard(); updateStats();
+  }
+
+  function reviewMissed() {
+    var missed = Object.keys(scores).filter(function(k) { return scores[k] === false; }).map(Number);
+    if (missed.length === 0) return;
+    originalCards = cards.slice(); reviewMode = true;
+    cards = missed.map(function(i) { return originalCards[i]; });
+    scores = {}; current = 0;
+    document.getElementById('reviewBanner').innerHTML = '🔁 Reviewing missed words only <button id="exitReviewBtn">Exit Review</button>';
+    document.getElementById('exitReviewBtn').onclick = exitReview;
+    document.getElementById('reviewBanner').classList.add('show');
+    renderCard(); updateStats();
+  }
+
+  function reviewSkipped() {
+    var skippedIdx = Object.keys(skippedCards).filter(function(k) { return skippedCards[k]; }).map(Number);
+    if (skippedIdx.length === 0) return;
+    originalCards = cards.slice(); reviewMode = true;
+    cards = skippedIdx.map(function(i) { return originalCards[i]; });
+    skippedCards = {}; scores = {}; current = 0;
+    document.getElementById('reviewBanner').innerHTML = '🔁 Reviewing skipped words only <button id="exitReviewBtn">Exit Review</button>';
+    document.getElementById('exitReviewBtn').onclick = exitReview;
+    document.getElementById('reviewBanner').classList.add('show');
+    renderCard(); updateStats();
+  }
+
+  function exitReview() {
+    if (!reviewMode) return;
+    cards = originalCards.slice(); reviewMode = false; originalCards = []; current = 0;
+    document.getElementById('reviewBanner').classList.remove('show');
+    renderCard(); updateStats();
+  }
+
+  // Event bindings
+  document.getElementById('checkBtn').onclick = function(e) { e.preventDefault(); checkAnswer(); };
+  document.getElementById('nextBtn').onclick = function(e) { e.preventDefault(); nextCard(); };
+  document.getElementById('skipBtn').onclick = function(e) { e.preventDefault(); skipCard(); };
+  document.getElementById('shuffleBtn').onclick = function(e) { e.preventDefault(); shuffleCards(); };
+  document.getElementById('reviewBtn').onclick = function(e) { e.preventDefault(); reviewMissed(); };
+  document.getElementById('reviewSkippedBtn').onclick = function(e) { e.preventDefault(); reviewSkipped(); };
+  document.getElementById('exitReviewBtn').onclick = function(e) { e.preventDefault(); exitReview(); };
+
+  document.getElementById('tab-all').onclick = function() { setCategory('all'); };
+  document.getElementById('tab-viso').onclick = function() { setCategory('viso'); };
+  document.getElementById('tab-corpo').onclick = function() { setCategory('corpo'); };
+  document.getElementById('tab-prepositions').onclick = function() { setCategory('prepositions'); };
+  document.getElementById('tab-conjugations').onclick = function() { setCategory('conjugations'); };
+
+  document.getElementById('mode-it').onclick = function() { setMode('it'); };
+  document.getElementById('mode-en').onclick = function() { setMode('en'); };
+
+  document.getElementById('answerInput').onkeypress = function(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      e.preventDefault();
+      answered ? nextCard() : checkAnswer();
+    }
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.key === 'Enter' || e.keyCode === 13) && answered && document.getElementById('nextBtn').classList.contains('show')) {
+      e.preventDefault(); nextCard();
+    }
+  });
+
+  renderCard();
+  updateStats();
+})();
+</script>
+</body>
+</html>
